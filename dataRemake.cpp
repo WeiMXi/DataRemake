@@ -8,9 +8,8 @@
 
 #include "TTree.h"
 #include "TFile.h"
-#include "ROOT/RDataFrame.hxx"
-#include "ROOT/RVec.hxx"
-#include <ROOT/RSnapshotOptions.hxx>
+#include "TStopwatch.h"
+#include "TString.h"
 
 #define BRANCH_BUFSIZE 1000000000
 #define LOAD_BASKETS_SIZE 2000000000
@@ -24,7 +23,7 @@ struct oneLeaf
 {
     const std::string name;
     T data;
-    int bufsize;
+    const int bufsize;
 };
 
 struct oneData
@@ -91,21 +90,28 @@ void printProgressBar(const int currentValue, const int totalValue, const int ba
     std::cout.flush();
 }
 
-int dataRemake()
+int main()
 {
     // ROOT::EnableImplicitMT();
     std::cout << "Program Started!" << std::endl;
+    TStopwatch timer;
+    timer.Start();
 
     const auto [detector2ID, order] = getMapping2Detector("Mapping2Detector.csv");
     if (detector2ID.size() == 0)
     {
         return 1;
     }
-    std::unordered_map<int, std::string> id2detector;
-    for (auto &&pair : std::as_const(detector2ID))
+    const auto reverseMap = [&]()
     {
-        id2detector[pair.second] = pair.first;
-    }
+        std::unordered_map<int, std::string> map;
+        for (auto &&pair : std::as_const(detector2ID))
+        {
+            map[pair.second] = pair.first;
+        }
+        return map;
+    };
+    const auto id2detector = reverseMap();
 
     const std::array<size_t, 2> LPDRange = {256, 512};
 
@@ -121,11 +127,11 @@ int dataRemake()
     const std::string rawDataTreeName = "data";
     const auto rawDataTree = std::unique_ptr<TTree>(static_cast<TTree *>(rawDataFile->Get(rawDataTreeName.c_str())));
 
-    oneData anRawData;
-    rawDataTree->SetBranchAddress(anRawData.channelID.name.c_str(), &anRawData.channelID.data);
-    rawDataTree->SetBranchAddress(anRawData.time.name.c_str(), &anRawData.time.data);
-    rawDataTree->SetBranchAddress(anRawData.energy.name.c_str(), &anRawData.energy.data);
-    rawDataTree->SetBranchAddress(anRawData.tot.name.c_str(), &anRawData.tot.data);
+    oneData aRawData;
+    rawDataTree->SetBranchAddress(aRawData.channelID.name.c_str(), &aRawData.channelID.data);
+    rawDataTree->SetBranchAddress(aRawData.time.name.c_str(), &aRawData.time.data);
+    rawDataTree->SetBranchAddress(aRawData.energy.name.c_str(), &aRawData.energy.data);
+    rawDataTree->SetBranchAddress(aRawData.tot.name.c_str(), &aRawData.tot.data);
     rawDataTree->LoadBaskets(LOAD_BASKETS_SIZE);
 
     const std::regex regex("([^/]+)(?=(\\.[^/.]+)$)");
@@ -141,11 +147,11 @@ int dataRemake()
     {
         if (id2Tree.find(channelID) == id2Tree.end())
         {
-            id2Tree[channelID] = std::make_unique<TTree>(id2detector[channelID].c_str(), id2detector[channelID].c_str());
-            id2Tree[channelID]->Branch(anRawData.channelID.name.c_str(), &anRawData.channelID.data, anRawData.channelID.bufsize);
-            id2Tree[channelID]->Branch(anRawData.time.name.c_str(), &anRawData.time.data, anRawData.time.bufsize);
-            id2Tree[channelID]->Branch(anRawData.energy.name.c_str(), &anRawData.energy.data, anRawData.energy.bufsize);
-            id2Tree[channelID]->Branch(anRawData.tot.name.c_str(), &anRawData.tot.data, anRawData.tot.bufsize);
+            id2Tree[channelID] = std::make_unique<TTree>(id2detector.at(channelID).c_str(), id2detector.at(channelID).c_str());
+            id2Tree[channelID]->Branch(aRawData.channelID.name.c_str(), &aRawData.channelID.data, aRawData.channelID.bufsize);
+            id2Tree[channelID]->Branch(aRawData.time.name.c_str(), &aRawData.time.data, aRawData.time.bufsize);
+            id2Tree[channelID]->Branch(aRawData.energy.name.c_str(), &aRawData.energy.data, aRawData.energy.bufsize);
+            id2Tree[channelID]->Branch(aRawData.tot.name.c_str(), &aRawData.tot.data, aRawData.tot.bufsize);
             id2Tree[channelID]->SetMaxVirtualSize(MAX_VIRTUAL_SIZE);
             id2Tree[channelID]->SetAutoSave(AUTOSAVE_SIZE);
         }
@@ -156,7 +162,7 @@ int dataRemake()
     for (int i = 0; i < rawDataSize; i++)
     {
         rawDataTree->GetEntry(i);
-        id2Tree[anRawData.channelID.data]->Fill();
+        id2Tree[aRawData.channelID.data]->Fill();
         if (1.0 * i / rawDataSize > progress + .01)
         {
             printProgressBar(i, rawDataSize);
@@ -172,6 +178,11 @@ int dataRemake()
         id2Tree.at(detector2ID.at(detectorName))->Write();
     }
 
+    // timer, stop and print
+    timer.Stop();
+    const auto realTime = timer.RealTime();
+    const auto cpuTime = timer.CpuTime();
+    std::cout << Form("RealTime: %4.2f s, CpuTime: %4.2f s", realTime, cpuTime) << std::endl;
 
     return 0;
 }

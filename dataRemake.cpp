@@ -11,6 +11,8 @@
 #include "TStopwatch.h"
 #include "TString.h"
 
+#define IS_MACRO false
+
 #define BRANCH_BUFSIZE 1000000000
 #define LOAD_BASKETS_SIZE 2000000000
 #define MAX_VIRTUAL_SIZE 2000000000
@@ -90,7 +92,11 @@ void printProgressBar(const int currentValue, const int totalValue, const int ba
     std::cout.flush();
 }
 
+#ifdef IS_MACRO
+int dataRemake()
+#else
 int main()
+#endif
 {
     // ROOT::EnableImplicitMT();
     std::cout << "Program Started!" << std::endl;
@@ -102,16 +108,16 @@ int main()
     {
         return 1;
     }
-    const auto reverseMap = [&]()
+    const auto reverseMap = [](const std::unordered_map<std::string, int>& originMap)
     {
         std::unordered_map<int, std::string> map;
-        for (auto &&pair : std::as_const(detector2ID))
+        for (auto &&pair : std::as_const(originMap))
         {
             map[pair.second] = pair.first;
         }
         return map;
     };
-    const auto id2detector = reverseMap();
+    const auto id2detector = reverseMap(detector2ID);
 
     const std::array<size_t, 2> LPDRange = {256, 512};
 

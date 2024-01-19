@@ -88,7 +88,7 @@ void printProgressBar(const int currentValue, const int totalValue, const int ba
         else
             std::cout << " ";
     }
-    std::cout << "] " << int(progress * 100.0) << " % xi xi\r";
+    std::cout << "] " << int(progress * 100.0) << " % ☀🎓\r";
     std::cout.flush();
 }
 
@@ -162,6 +162,7 @@ int main()
         }
     }
 
+    std::cout << "Sorting ..." << std::endl;
     const auto rawDataSize = rawDataTree->GetEntries();
     double progress = 0;
     for (int i = 0; i < rawDataSize; i++)
@@ -181,12 +182,16 @@ int main()
     }
     printProgressBar(rawDataSize, rawDataSize);
     std::cout << std::endl;
-    std::cout << "Writing remain data to " << outputFileName << std::endl;
+    std::cout << "Writing remain data to " << outputFileName << " ..." << std::endl;
 
-    for (auto &&detectorName : std::as_const(order))
+    const auto channelNumber = order.size();
+    for (std::size_t i = 0; i < channelNumber; i++)
     {
-        id2Tree.at(detector2ID.at(detectorName))->Write();
+        id2Tree.at(detector2ID.at(order.at(i)))->Write();
+        printProgressBar(i, channelNumber);
     }
+    printProgressBar(channelNumber, channelNumber);
+    std::cout << std::endl;
 
     // timer, stop and print
     timer.Stop();

@@ -11,7 +11,7 @@
 #include "TStopwatch.h"
 #include "TString.h"
 
-#define IS_MACRO false
+#define IS_MACRO true
 
 #define BRANCH_BUFSIZE 1000000000
 #define LOAD_BASKETS_SIZE 2000000000
@@ -88,11 +88,11 @@ void printProgressBar(const int currentValue, const int totalValue, const int ba
         else
             std::cout << " ";
     }
-    std::cout << "] " << int(progress * 100.0) << " % ☀🎓\r";
+    std::cout << "] " << int(progress * 100.0) << " % ☀ 🎓\r";
     std::cout.flush();
 }
 
-#ifdef IS_MACRO
+#if IS_MACRO
 int dataRemake()
 #else
 int main()

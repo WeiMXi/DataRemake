@@ -108,7 +108,7 @@ int main()
     {
         return 1;
     }
-    const auto reverseMap = [](const std::unordered_map<std::string, int>& originMap)
+    const auto reverseMap = [](const std::unordered_map<std::string, int> &originMap)
     {
         std::unordered_map<int, std::string> map;
         for (auto &&pair : std::as_const(originMap))
@@ -118,8 +118,6 @@ int main()
         return map;
     };
     const auto id2detector = reverseMap(detector2ID);
-
-    const std::array<size_t, 2> LPDRange = {256, 512};
 
     const std::string rawDataFileName = RAW_DATA_FILE_NAME;
     std::unique_ptr<TFile> rawDataFile(TFile::Open(rawDataFileName.c_str(), "READ"));
@@ -149,8 +147,9 @@ int main()
     outputFile->cd();
 
     std::unordered_map<int, std::unique_ptr<TTree>> id2Tree;
-    for (int channelID = LPDRange[0]; channelID < LPDRange[1]; channelID++)
+    for (auto &&detectorName : std::as_const(order))
     {
+        const auto channelID = detector2ID.at(detectorName);
         if (id2Tree.find(channelID) == id2Tree.end())
         {
             id2Tree[channelID] = std::make_unique<TTree>(id2detector.at(channelID).c_str(), id2detector.at(channelID).c_str());
@@ -168,7 +167,12 @@ int main()
     for (int i = 0; i < rawDataSize; i++)
     {
         rawDataTree->GetEntry(i);
-        id2Tree[aRawData.channelID.data]->Fill();
+        const auto channelID = aRawData.channelID.data;
+        if (id2Tree.find(channelID) != id2Tree.end())
+        {
+            id2Tree[channelID]->Fill();
+        }
+
         if (1.0 * i / rawDataSize > progress + .01)
         {
             printProgressBar(i, rawDataSize);

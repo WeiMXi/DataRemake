@@ -36,8 +36,11 @@ struct oneData
     oneLeaf<Float_t> tot{"tot", {}, BRANCH_BUFSIZE};
 };
 
-const std::pair<std::unordered_map<std::string, int>, std::vector<std::string>> getMapping2Detector(const std::string &fileName)
+const std::pair<std::unordered_map<std::string, int>, std::vector<std::string>> getMapping2Detector(const std::string &fileName, const int barWidth = 52)
 {
+    for (int i = 0; i < barWidth; ++i)
+        std::cout << "-";
+
     std::ifstream file(fileName);
     std::vector<std::string> keys;
     std::unordered_map<std::string, int> detector2ID;
@@ -46,10 +49,13 @@ const std::pair<std::unordered_map<std::string, int>, std::vector<std::string>> 
         std::cerr << "Error opening the file: " << fileName << std::endl;
         return {detector2ID, keys}; // Error
     }
-    std::string line;
 
+    std::string line;
+    std::cout << std::endl;
+    int lineNumber = 0;
     while (std::getline(file, line))
     {
+        lineNumber++;
         std::vector<std::string> row; // save a row of data
         std::stringstream ss(line);
         std::string cell;
@@ -58,6 +64,13 @@ const std::pair<std::unordered_map<std::string, int>, std::vector<std::string>> 
         {
             row.push_back(cell);
         }
+
+        if (row[0] != "U" and row[0] != "D")
+        {
+            std::cout << lineNumber << " " << line << " is skipped!" << std::endl;
+            continue;
+        }
+
         const std::string k1 = row[0] + row[1] + row[2] + "u";
         const std::string k2 = row[0] + row[1] + row[2] + "d";
         detector2ID[k1] = std::stoi(row[3]);
@@ -66,7 +79,10 @@ const std::pair<std::unordered_map<std::string, int>, std::vector<std::string>> 
         keys.push_back(k2);
     }
     file.close();
-    std::cout << "Read " << fileName << " finished!" << std::endl;
+    std::cout << "Reading " << fileName << " finished!" << std::endl;
+    for (int i = 0; i < barWidth; ++i)
+        std::cout << "-";
+    std::cout << std::endl;
     return {detector2ID, keys};
 }
 

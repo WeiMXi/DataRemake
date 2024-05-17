@@ -185,9 +185,10 @@ int main()
     {
         rawDataTree->GetEntry(i);
         const auto channelID = aRawData.channelID.data;
+        const auto it = id2Tree.find(channelID);
         if (id2Tree.find(channelID) != id2Tree.end())
         {
-            id2Tree[channelID]->Fill();
+            it->second->Fill();
         }
 
         if (1.0 * i / rawDataSize > progress + .01)

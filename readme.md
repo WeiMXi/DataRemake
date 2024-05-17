@@ -10,7 +10,7 @@ g++ -o dataRemake dataRemake.cpp $(root-config --libs --cflags) -O3
 ```
 
 ## Skip some channels
-One can add any no "U" or "D" symbol at the beginning of the corresponding line, then the two channel will be skipped.
+One can add any no "U" or "D" symbol at the beginning of the corresponding line, then the two channels will be skipped.
 
 For example:
 ```text
